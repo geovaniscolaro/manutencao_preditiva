@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project data
+data/*.npy
+
+# Trained model artifacts
+models/*.pkl
+models/*.joblib
+
+# OS files
+.DS_Store
