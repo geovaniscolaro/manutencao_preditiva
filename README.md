@@ -583,7 +583,7 @@ docs/schedule.md
 ## 17. Estrutura do repositório
 
 ```text
-predictive-maintenance-ai/
+manutencao_preditiva/
 │
 ├── app/
 │   ├── dashboard.py
