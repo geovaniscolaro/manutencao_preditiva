@@ -1,6 +1,6 @@
-# Predictive Maintenance AI
+# IA para Manutenção Preditiva Industrial
 
-## Proof of Concept for Industrial Equipment Condition Classification
+## Prova de Conceito para Classificação da Condição de Equipamentos Industriais
 
 Prova de conceito de uma solução de Inteligência Artificial aplicada ao contexto de **manutenção preditiva industrial**, utilizando sinais adquiridos simultaneamente por múltiplos sensores instalados em uma máquina.
 
