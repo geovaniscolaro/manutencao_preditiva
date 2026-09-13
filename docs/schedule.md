@@ -290,13 +290,13 @@ Atividade                                  01 02 03 04 05 06 07 08 09 10 11 12 1
 ------------------------------------------------------------------------------------------------
 Requisitos e diagnóstico                   ██ ██
 Engenharia / qualidade dos dados              ██ ██ ██
-EDA e baseline                                ██ ██ ██
-Feature engineering / modelagem                     ██ ██ ██ ██
-Validação do modelo                                      ██ ██ ██
-Industrialização do pipeline                                ██ ██ ██ ██
-API / persistência / dashboard                                    ██ ██ ██
-Integração e homologação                                               ██ ██ ██
-Operação assistida / entrega                                                     ██
+EDA e baseline                                   ██ ██ ██
+Feature engineering / modelagem                        ██ ██ ██ ██
+Validação do modelo                                             ██ ██ ██
+Industrialização do pipeline                                       ██ ██ ██ ██
+API / persistência / dashboard                                           ██ ██ ██
+Integração e homologação                                                       ██ ██ ██
+Operação assistida / entrega                                                            ██
 ```
 
 O cronograma representa uma referência inicial. Atividades podem ocorrer
