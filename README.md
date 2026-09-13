@@ -1,87 +1,155 @@
 # IA para Manutenção Preditiva Industrial
 
-## Prova de Conceito para Classificação da Condição de Equipamentos Industriais
+## Prova de Conceito de Inteligência Artificial para Manutenção Preditiva Industrial
 
-Prova de conceito de uma solução de Inteligência Artificial aplicada ao contexto de **manutenção preditiva industrial**, utilizando sinais adquiridos simultaneamente por múltiplos sensores instalados em uma máquina.
+Este repositório apresenta uma **Prova de Conceito (PoC) de Machine Learning aplicada a um cenário de manutenção preditiva industrial**, desenvolvida a partir de sinais multissensoriais de uma máquina.
 
-O projeto contempla análise da qualidade dos dados, processamento de sinais, engenharia de atributos, seleção de sensores, comparação de modelos de Machine Learning, validação experimental e proposta de arquitetura para evolução da PoC até uma solução industrial.
+O projeto contempla o ciclo de desenvolvimento de uma solução de Inteligência Artificial, incluindo **qualidade e análise dos dados, processamento de sinais, engenharia de atributos, avaliação e seleção de sensores, comparação de modelos, validação, demonstração funcional e proposta de arquitetura para evolução da PoC para um ambiente industrial**.
+
+A configuração final utiliza os **Sensores 1, 2 e 3**, combinando características temporais e representação espectral detalhada por **Fast Fourier Transform (FFT)** com o algoritmo **HistGradientBoosting**.
+
+### Principais resultados
+
+| Métrica | Resultado |
+|---|---:|
+| **Accuracy — conjunto de teste** | **95,13%** |
+| **Macro F1 — conjunto de teste** | **95,13%** |
+| **Accuracy média — validação cruzada 5-fold** | **94,92%** |
+| **Macro F1 médio — validação cruzada 5-fold** | **94,92%** |
+
+> Os resultados representam evidência de viabilidade técnica da PoC sobre o conjunto de dados disponibilizado e não constituem garantia de desempenho em ambiente industrial de produção.
 
 ---
 
-## 1. Objetivo
+## 1. Contexto
 
-Desenvolver um pipeline de Machine Learning capaz de identificar diferentes estados de operação de uma máquina industrial a partir de sinais multissensoriais adquiridos a uma frequência de amostragem de **10 kHz**.
+O cenário considera uma empresa industrial com máquinas instrumentadas por sensores e sistemas de aquisição.
 
-A solução foi desenvolvida como uma **Proof of Concept (PoC)**. Portanto, os resultados apresentados representam evidência de viabilidade técnica sobre o conjunto de dados disponibilizado e não uma estimativa definitiva de desempenho em ambiente produtivo.
+A camada de automação e instrumentação realiza a aquisição dos sinais, enquanto uma plataforma de software é responsável pelo armazenamento e disponibilização dos dados para a camada de Inteligência Artificial.
 
----
+O objetivo da PoC é desenvolver e avaliar um pipeline de Machine Learning capaz de classificar os **cinco estados operacionais representados pelas Classes A, B, C, D e E**.
 
-## 2. Dados
+O conjunto disponibilizado possui:
 
-O conjunto disponibilizado contém:
-
-- cinco arquivos correspondentes aos sinais dos sensores;
-- um arquivo contendo as classes associadas às observações;
 - 50.000 observações;
-- cinco classes balanceadas;
-- frequência de amostragem de 10 kHz.
+- cinco classes balanceadas, com 10.000 observações por classe;
+- cinco arquivos correspondentes aos sensores;
+- frequência de amostragem de **10 kHz**;
+- aquisição simultânea dos sensores.
 
-Os arquivos originais de dados não são versionados neste repositório.
-
-### Análise de qualidade dos sensores
-
-A inspeção inicial identificou comportamentos distintos entre os sensores:
-
-- **Sensores 1, 2 e 3:** sinais válidos e com informação discriminativa;
-- **Sensor 4:** ausência de variabilidade, apresentando valor constante nas observações válidas;
-- **Sensor 5:** sinal variável, porém sem contribuição discriminativa relevante para a classificação nesta PoC.
-
-A seleção dos sensores foi baseada tanto em critérios de qualidade dos dados quanto em avaliação experimental.
+Como não foi disponibilizada a semântica física das Classes A–E, elas são tratadas nesta PoC como **estados operacionais**, sem associá-las arbitrariamente a tipos específicos de falha.
 
 ---
 
-## 3. Pipeline de Machine Learning
+## 2. Estratégia de desenvolvimento
 
-O pipeline experimental foi estruturado nas seguintes etapas:
+A solução foi desenvolvida de forma incremental:
 
 ```text
-Dados brutos
-    ↓
+Dados dos sensores
+        ↓
 Data Quality
-    ↓
+        ↓
 Análise Exploratória
-    ↓
+        ↓
 Pré-processamento
-    ↓
-Processamento de Sinais
-    ↓
+        ↓
 Engenharia de Atributos
-    ↓
-Seleção de Sensores
-    ↓
+        ↓
+Avaliação dos Sensores
+        ↓
 Comparação de Modelos
-    ↓
-Refinamento da Representação Espectral
-    ↓
+        ↓
+Análise Temporal × Espectral
+        ↓
+Refinamento da FFT
+        ↓
 Modelo Final
-    ↓
-Avaliação e Validação
+        ↓
+Validação
+        ↓
+Demonstração
+        ↓
+Arquitetura para Produção
 ```
 
-### Pré-processamento
+A estratégia priorizou não apenas a escolha do algoritmo, mas também a **qualidade dos dados, seleção das fontes de informação e representação adequada dos sinais**.
 
-O processamento inclui:
+---
 
-- tratamento de valores ausentes;
-- remoção da componente DC;
-- aplicação de janela de Hann;
-- Transformada Rápida de Fourier (FFT).
+## 3. Qualidade dos dados
 
-### Engenharia de atributos
+A análise inicial identificou comportamentos distintos entre os sensores.
 
-Foram investigadas duas categorias principais.
+### Sensores 1, 2 e 3
 
-**Domínio temporal:**
+Os arquivos foram disponibilizados originalmente com dimensão:
+
+```text
+(50000, 201)
+```
+
+Foram identificados **49.999 valores ausentes em cada sensor**, concentrados exclusivamente na última coluna, de índice 200.
+
+Como essa coluna apresentava ausência de dados em praticamente todas as observações, ela foi removida antes das etapas subsequentes.
+
+Após o tratamento:
+
+```text
+Sensor 1: (50000, 200)
+Sensor 2: (50000, 200)
+Sensor 3: (50000, 200)
+```
+
+Considerando a frequência de amostragem de 10 kHz, as 200 amostras utilizadas correspondem matematicamente a um intervalo de **20 ms**.
+
+Como não foram fornecidos metadados sobre a estratégia original de segmentação das aquisições, não se assume que cada linha corresponda necessariamente a uma janela física independente de aquisição.
+
+### Sensor 4
+
+O Sensor 4 apresentou:
+
+- 10.000 valores ausentes;
+- mínimo dos valores válidos: 50,0;
+- máximo dos valores válidos: 50,0;
+- desvio-padrão: 0;
+- apenas um valor válido distinto.
+
+A ausência completa de variabilidade torna o sinal não discriminativo para a classificação nesta PoC.
+
+Por esse motivo, o Sensor 4 não foi utilizado na modelagem.
+
+Em uma aplicação industrial, esse comportamento deveria motivar uma investigação da aquisição, configuração e condição do sensor, sem atribuir uma causa física apenas a partir dos dados disponíveis.
+
+### Sensor 5
+
+O Sensor 5 apresentou **241.512 valores ausentes**, aproximadamente **2,415% dos dados**, mas manteve variabilidade nos valores válidos.
+
+Portanto, ele não foi descartado inicialmente por um problema de variabilidade. Sua contribuição foi posteriormente avaliada de forma experimental durante a seleção dos sensores.
+
+---
+
+## 4. Análise exploratória dos sinais
+
+A análise no domínio do tempo mostrou elevada sobreposição visual entre exemplos das cinco classes.
+
+Características como RMS e desvio-padrão apresentaram diferenças entre as distribuições das classes, porém com sobreposição considerável.
+
+A análise espectral, por sua vez, mostrou diferenças de magnitude entre as classes em diferentes regiões do espectro.
+
+Essas observações motivaram a investigação quantitativa das informações presentes nos domínios **temporal e espectral**.
+
+Como não foram disponibilizadas informações sobre significado físico das classes, tipo e posicionamento dos sensores, rotação, carga ou condições mecânicas da máquina, os componentes espectrais não foram associados a modos específicos de falha.
+
+---
+
+## 5. Engenharia inicial de atributos
+
+Para cada sensor inicialmente considerado foram extraídas características nos domínios do tempo e da frequência.
+
+### Características temporais
+
+Foram utilizadas:
 
 - média;
 - desvio-padrão;
@@ -89,21 +157,32 @@ Foram investigadas duas categorias principais.
 - pico a pico;
 - kurtosis;
 - skewness;
-- máximo absoluto;
+- valor máximo absoluto;
 - crest factor.
 
-**Domínio da frequência:**
+### Características espectrais agregadas
 
-- frequência dominante;
-- centroide espectral;
-- energia em bandas;
-- representação detalhada da magnitude da FFT.
+A representação inicial também incluiu atributos derivados do espectro do sinal.
+
+Com os Sensores 1, 2, 3 e 5, a matriz inicial resultou em:
+
+```text
+50.000 observações × 64 atributos
+```
+
+Após o pré-processamento e a extração de atributos:
+
+```text
+NaNs: 0
+Infinitos: 0
+Features constantes: 0
+```
 
 ---
 
-## 4. Seleção dos Sensores
+## 6. Avaliação da contribuição dos sensores
 
-Foi realizado um estudo de ablação para avaliar a contribuição dos sensores.
+Foi realizada uma análise de ablação para avaliar a contribuição individual e combinada dos sensores.
 
 | Configuração | Accuracy | Macro F1 |
 |---|---:|---:|
@@ -111,252 +190,504 @@ Foi realizado um estudo de ablação para avaliar a contribuição dos sensores.
 | Sensor 2 | 61,32% | 61,25% |
 | Sensor 3 | 57,21% | 56,91% |
 | Sensor 5 | 20,01% | 20,00% |
-| Sensores 1 + 2 + 3 | **81,12%** | **80,99%** |
+| **Sensores 1 + 2 + 3** | **81,12%** | **80,99%** |
 | Sensores 1 + 2 + 3 + 5 | 79,99% | 79,86% |
 
-Os resultados indicam complementaridade entre os Sensores 1, 2 e 3.
+Os Sensores 1, 2 e 3 apresentam informações complementares: individualmente possuem desempenho moderado, mas sua combinação alcançou **81,12% de Accuracy**.
 
-O Sensor 5 apresentou desempenho próximo ao nível de chance para um problema balanceado de cinco classes e sua inclusão reduziu o desempenho do modelo combinado. Por esse motivo, a configuração final utiliza os **Sensores 1, 2 e 3**.
+O Sensor 5 isoladamente apresentou desempenho próximo ao nível de chance para um problema balanceado de cinco classes. Além disso, sua inclusão reduziu a Accuracy da combinação de 81,12% para 79,99%.
+
+Dessa forma, foram selecionados os **Sensores 1, 2 e 3**, resultando inicialmente em:
+
+```text
+50.000 observações × 48 atributos
+```
+
+A exclusão do Sensor 5 foi, portanto, baseada em sua contribuição empírica para a classificação, e não simplesmente na presença de valores ausentes.
 
 ---
 
-## 5. Comparação de Modelos
+## 7. Comparação de modelos
 
-Utilizando inicialmente atributos temporais e espectrais agregados dos Sensores 1, 2 e 3:
+Utilizando os 48 atributos dos Sensores 1, 2 e 3, foram comparados três algoritmos sob a mesma estratégia de treinamento e teste.
 
 | Modelo | Accuracy | Macro F1 |
 |---|---:|---:|
 | Random Forest | 81,12% | 80,99% |
 | Extra Trees | 81,96% | 81,84% |
-| HistGradientBoosting | **84,22%** | **84,17%** |
+| **HistGradientBoosting** | **84,22%** | **84,17%** |
 
-O **HistGradientBoosting** apresentou o melhor resultado e foi selecionado para os experimentos seguintes.
+O **HistGradientBoosting** apresentou o melhor desempenho entre os modelos avaliados nessa etapa e foi selecionado para o refinamento da solução.
 
 ---
 
-## 6. Análise Temporal × Espectral
+## 8. Contribuição temporal e espectral
 
-Um estudo de ablação foi realizado para avaliar a contribuição dos diferentes domínios de representação.
+As 48 características selecionadas foram separadas em:
+
+```text
+24 características temporais
+24 características espectrais agregadas
+```
+
+A contribuição de cada representação foi então avaliada.
 
 | Representação | Nº de atributos | Accuracy | Macro F1 |
 |---|---:|---:|---:|
-| Temporal | 24 | 50,46% | 50,35% |
-| Espectral agregada | 24 | 81,64% | 81,58% |
-| Temporal + Espectral agregada | 48 | **84,22%** | **84,17%** |
+| Temporais | 24 | 50,46% | 50,35% |
+| Espectrais | 24 | 81,64% | 81,58% |
+| Temporal + Espectral | 48 | 84,22% | 84,17% |
 
-Os resultados demonstraram que a maior parte da informação discriminativa encontra-se no **domínio da frequência**, motivando o refinamento da representação espectral.
+Os resultados mostram que a maior parte da informação discriminativa está presente no **domínio da frequência**.
 
----
+Ao mesmo tempo, a combinação com características temporais acrescentou informação complementar, elevando a Accuracy de 81,64% para 84,22%.
 
-## 7. Refinamento Espectral
-
-Considerando uma frequência de amostragem de 10 kHz e 200 amostras por observação, a FFT apresenta resolução de **50 Hz**.
-
-Foi utilizada uma representação detalhada da magnitude da FFT entre 50 Hz e 5 kHz:
-
-- 100 atributos espectrais por sensor;
-- 3 sensores selecionados;
-- 300 atributos de FFT.
-
-A combinação desses atributos com 24 características temporais resultou em uma representação final de **324 atributos**.
+Esse resultado motivou o refinamento da representação espectral.
 
 ---
 
-## 8. Resultados
+## 9. Refinamento espectral por FFT
 
-A evolução experimental foi:
+Para preservar maior detalhamento do conteúdo espectral, foi construída uma representação baseada nos componentes da FFT dos Sensores 1, 2 e 3.
+
+O processamento inclui:
+
+```text
+Sinal
+  ↓
+Tratamento de valores ausentes
+  ↓
+Remoção da componente DC
+  ↓
+Janela de Hann
+  ↓
+FFT
+  ↓
+Magnitude do espectro
+  ↓
+Remoção do bin DC
+```
+
+Foram mantidos **100 atributos espectrais por sensor**:
+
+```text
+100 × 3 = 300 atributos espectrais
+```
+
+A representação FFT detalhada apresentou:
+
+```text
+Dimensão: (50000, 300)
+NaNs: 0
+Infinitos: 0
+```
+
+Utilizando somente essa representação com HistGradientBoosting:
+
+| Métrica | Resultado |
+|---|---:|
+| Accuracy | **94,07%** |
+| Macro F1 | **94,07%** |
+
+Em comparação com os 84,22% obtidos com características agregadas, o refinamento espectral produziu um ganho de **9,85 pontos percentuais de Accuracy**, mantendo o mesmo tipo de classificador.
+
+---
+
+## 10. Representação e modelo final
+
+A representação final combina:
+
+```text
+24 características temporais
++
+300 atributos da FFT detalhada
+=
+324 atributos
+```
+
+A matriz final possui:
+
+```text
+(50000, 324)
+```
+
+O modelo final utiliza:
+
+```text
+Sensores: S1 + S2 + S3
+Modelo: HistGradientBoostingClassifier
+Representação: Temporal + FFT detalhada
+```
+
+A divisão holdout foi realizada de forma estratificada:
+
+```text
+Treinamento: 80%
+Teste:       20%
+```
+
+O conjunto de teste contém **10.000 observações**, sendo 2.000 de cada classe.
+
+### Resultado final
+
+| Métrica | Resultado |
+|---|---:|
+| **Accuracy** | **95,13%** |
+| **Macro F1** | **95,13%** |
+
+### Desempenho por classe
+
+| Classe | Precision | Recall | F1-score |
+|---|---:|---:|---:|
+| Classe A | 97,05% | 97,20% | 97,13% |
+| Classe B | 94,07% | 94,45% | 94,26% |
+| Classe C | 93,47% | 93,70% | 93,58% |
+| Classe D | 98,05% | 98,25% | 98,15% |
+| Classe E | 92,98% | 92,05% | 92,51% |
+
+O desempenho é consistente entre as cinco classes, com F1-score superior a 92% em todas elas.
+
+A principal região de confusão ocorre entre as Classes C e E, com 74 observações de C classificadas como E e 74 observações de E classificadas como C.
+
+Sem a semântica física das classes, não é possível associar essa confusão a condições mecânicas específicas.
+
+---
+
+## 11. Evolução experimental
+
+A evolução do pipeline evidencia o impacto das decisões tomadas durante o desenvolvimento.
 
 | Experimento | Accuracy |
 |---|---:|
 | Random Forest — S1 + S2 + S3 + S5 | 79,99% |
 | Random Forest — S1 + S2 + S3 | 81,12% |
-| HistGradientBoosting — atributos agregados | 84,22% |
+| HistGradientBoosting — features agregadas | 84,22% |
 | HistGradientBoosting — FFT detalhada | 94,07% |
 | **HistGradientBoosting — Temporal + FFT detalhada** | **95,13%** |
 
-### Modelo final
-
-**Sensores:** 1, 2 e 3  
-**Representação:** atributos temporais + FFT detalhada  
-**Algoritmo:** HistGradientBoosting
-
-Resultados no conjunto de teste estratificado:
-
-- **Accuracy: 95,13%**
-- **Macro F1: 95,13%**
-
-O F1-score por classe permaneceu superior a 92%.
-
-### Validação cruzada
-
-Na validação cruzada estratificada com cinco folds:
-
-- **Accuracy média: aproximadamente 94,92%**
-- **Macro F1 médio: aproximadamente 94,92%**
-- **Desvio-padrão da Accuracy: aproximadamente 0,04 ponto percentual**
-
-A baixa variabilidade entre os folds indica estabilidade do desempenho nos particionamentos avaliados.
+O principal ganho ocorreu com o **refinamento da representação dos sinais**, particularmente no domínio da frequência, e não apenas pela substituição do algoritmo de classificação.
 
 ---
 
-## 9. Principal Insight Técnico
+## 12. Validação cruzada
 
-O maior ganho de desempenho não foi obtido simplesmente pela utilização de um algoritmo de Machine Learning mais complexo.
+Foi realizada validação cruzada estratificada com **5 folds**.
 
-A evolução de aproximadamente **84,2% para 95,1%** ocorreu principalmente pelo refinamento da **representação dos sinais**, após a análise experimental demonstrar que a informação discriminativa estava predominantemente no domínio da frequência.
-
-A estratégia adotada foi:
+### Accuracy por fold
 
 ```text
-Análise
-   ↓
-Hipótese
-   ↓
-Experimento
-   ↓
-Evidência
-   ↓
-Decisão técnica
+[0.9485, 0.9492, 0.9496, 0.9489, 0.9497]
 ```
 
-Essa abordagem orientada por evidências guiou tanto a seleção dos sensores quanto a engenharia de atributos e a escolha do modelo.
+### Resultados médios
+
+| Métrica | Média | Desvio-padrão |
+|---|---:|---:|
+| Accuracy | **94,92%** | **0,0445 p.p.** |
+| Macro F1 | **94,92%** | **0,0456 p.p.** |
+
+A pequena variação entre os folds indica estabilidade do desempenho dentro da estratégia de validação utilizada.
+
+Entretanto, o conjunto disponibilizado não contém identificadores de máquina, sessão, ensaio, período de aquisição ou outros metadados que permitam estabelecer grupos independentes.
+
+Assim, a validação estratificada deve ser interpretada como **avaliação de viabilidade técnica da PoC**, e não como validação definitiva de generalização industrial.
+
+Em produção, a avaliação deverá utilizar dados independentes separados, quando aplicável, por máquina, período de operação, ensaio, lote de aquisição ou condição operacional.
 
 ---
 
-## 10. Arquitetura Industrial Proposta
+## 13. Demonstração funcional
 
-A PoC representa apenas a camada analítica inicial de uma solução completa.
+Como **preview da implementação**, foi desenvolvida uma aplicação funcional em **Streamlit**.
 
-A evolução para ambiente industrial é proposta conforme a arquitetura:
+A interface permite selecionar uma observação e visualizar:
+
+- classe operacional real;
+- classe prevista pelo modelo;
+- confiança da classificação;
+- distribuição de probabilidades entre as cinco classes.
+
+A demonstração utiliza:
 
 ```text
-Sensores da Máquina
-        ↓
-Aquisição / Edge
-        ↓
-Automação e Instrumentação
-        ↓
-Banco de Dados / Plataforma de Dados
-        ↓
-Data Quality & Sensor Health
-        ↓
-Pré-processamento
-        ↓
-Feature Engineering
-   Temporal + FFT
-        ↓
-Modelo de Machine Learning
- HistGradientBoosting
-        ↓
-API de Inferência
-       /predict
-      ↙        ↘
- Dashboard    Sistemas Industriais
+Modelo: HistGradientBoosting
+Sensores: S1 + S2 + S3
+Representação: 324 atributos
+Amostra demonstrativa: 100 observações
+Distribuição: 20 observações por classe
 ```
 
-A arquitetura produtiva deverá incorporar ainda práticas de **MLOps**, incluindo:
+A Accuracy de 93% observada nas 100 observações da interface refere-se exclusivamente ao subconjunto demonstrativo e **não substitui a avaliação principal de 95,13% obtida nas 10.000 observações do conjunto de teste**.
+
+A aplicação está disponível em:
 
 ```text
-Novos dados
-    ↓
-Monitoramento
-    ↓
-Data Drift / Model Drift
-    ↓
-Avaliação
-    ↓
-Retreinamento
-    ↓
-Validação
-    ↓
-Versionamento
-    ↓
-Deploy
+app/
+├── dashboard.py
+├── modelo_final.joblib
+├── demo_data.csv
+└── README.md
+```
+
+### Executar a demonstração
+
+A partir da raiz do repositório:
+
+```bash
+pip install -r requirements.txt
+cd app
+streamlit run dashboard.py
 ```
 
 ---
 
-## 11. Limitações
+## 14. Arquitetura proposta para produção
 
-O conjunto de dados disponibilizado não contém informações suficientes para identificar:
+A PoC representa a camada analítica e demonstrativa de uma solução que, em produção, deverá ser integrada à infraestrutura industrial.
 
-- tipo e posicionamento físico dos sensores;
-- rotação da máquina;
-- carga de operação;
-- significado físico das Classes A–E;
-- máquina ou equipamento de origem;
-- ensaio ou sessão de aquisição;
-- período de aquisição.
+```text
+┌─────────────────────────────┐
+│     Máquina Industrial      │
+│          Sensores           │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Aquisição / Edge / Automação│
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Banco / Plataforma de Dados │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Data Quality & Sensor Health│
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│      Pré-processamento      │
+│       Temporal + FFT        │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│     Modelo de Machine       │
+│          Learning           │
+│ HistGradientBoosting        │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│      API de Inferência      │
+│ /predict | /health | info   │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│ Dashboard / Sistemas        │
+│ Industriais / Manutenção    │
+└─────────────────────────────┘
+```
 
-Por esse motivo, não são atribuídos diagnósticos físicos específicos às classes ou aos componentes espectrais observados.
+Uma solução de produção deverá acrescentar mecanismos de:
 
-Além disso, a ausência de identificadores de máquina, ensaio ou sessão impede uma validação baseada em grupos fisicamente independentes.
+- persistência das inferências;
+- monitoramento da qualidade dos dados e dos sensores;
+- versionamento de dados e modelos;
+- monitoramento de drift;
+- monitoramento de desempenho;
+- logging e observabilidade;
+- rastreabilidade;
+- segurança e controle de acesso;
+- CI/CD;
+- política de re-treinamento;
+- governança do ciclo de vida do modelo.
 
-Os resultados devem, portanto, ser interpretados como evidência de **viabilidade técnica da PoC** sobre os dados fornecidos.
+A arquitetura detalhada está documentada em:
+
+```text
+docs/architecture.md
+```
 
 ---
 
-## 12. Evolução para Produção
+## 15. Evolução da PoC para produção
 
-Em uma implantação industrial, são recomendadas as seguintes etapas:
+A implantação industrial requer etapas adicionais além do desempenho do classificador.
 
-1. validação da qualidade e confiabilidade dos sensores;
-2. definição da estratégia de segmentação dos sinais;
-3. integração automatizada com a infraestrutura de dados;
-4. validação utilizando máquinas, ensaios ou períodos independentes;
-5. desenvolvimento da API de inferência;
-6. desenvolvimento de dashboard operacional;
-7. armazenamento do histórico de inferências;
-8. monitoramento de qualidade dos dados;
-9. monitoramento de data drift e model drift;
-10. versionamento e governança de modelos;
-11. estratégia controlada de retreinamento e redeploy;
-12. integração dos resultados ao processo de manutenção.
+### Engenharia de dados
+
+- integração com a fonte de dados industrial;
+- validação automática dos dados;
+- sincronização dos sensores;
+- armazenamento histórico;
+- rastreabilidade das aquisições.
+
+### Machine Learning
+
+- definição da semântica industrial das classes;
+- validação com máquinas e períodos independentes;
+- análise do custo dos diferentes tipos de erro;
+- versionamento do modelo;
+- monitoramento de drift;
+- política de re-treinamento.
+
+### Software e integração
+
+- API de inferência;
+- persistência das predições;
+- dashboard operacional;
+- integração com sistemas corporativos;
+- testes automatizados;
+- observabilidade.
+
+### Operação
+
+- definição de responsáveis;
+- níveis de criticidade;
+- regras para tratamento de alertas;
+- procedimentos de manutenção;
+- acompanhamento de indicadores.
 
 ---
 
-## 13. Estrutura do Repositório
+## 16. Cronograma proposto
+
+Foi elaborado um cronograma preliminar de **16 semanas**, sujeito a refinamento após o levantamento detalhado dos requisitos e diagnóstico do ambiente industrial.
+
+| Fase | Período |
+|---|---|
+| Kickoff, requisitos e diagnóstico | Semanas 1–2 |
+| Engenharia e qualidade dos dados | Semanas 2–4 |
+| EDA e baseline | Semanas 3–5 |
+| Feature engineering e modelagem | Semanas 5–8 |
+| Validação e seleção do modelo | Semanas 8–10 |
+| Industrialização do pipeline | Semanas 9–12 |
+| API, persistência e dashboard | Semanas 11–13 |
+| Integração e homologação | Semanas 13–15 |
+| Operação assistida e entrega | Semana 16 |
+
+A proposta utiliza entregas incrementais e checkpoints técnicos ao longo do desenvolvimento.
+
+O cronograma detalhado está disponível em:
+
+```text
+docs/schedule.md
+```
+
+---
+
+## 17. Estrutura do repositório
 
 ```text
 predictive-maintenance-ai/
 │
-├── api/          # Camada de disponibilização do modelo
-├── app/          # Aplicação e visualização
-├── data/         # Documentação dos dados
-├── docs/         # Arquitetura e documentação
-├── models/       # Artefatos de modelos
-├── notebooks/    # Análise e desenvolvimento da PoC
-├── src/          # Código-fonte do pipeline
+├── app/
+│   ├── dashboard.py
+│   ├── demo_data.csv
+│   ├── modelo_final.joblib
+│   └── README.md
+│
+├── data/
+│   └── README.md
+│
+├── docs/
+│   ├── architecture.md
+│   ├── schedule.md
+│   └── README.md
+│
+├── models/
+│   └── README.md
+│
+├── notebooks/
+│   ├── 01_PoC_Manutencao_Preditiva.ipynb
+│   └── README.md
+│
+├── src/
+│   └── README.md
 │
 ├── .gitignore
+├── requirements.txt
 └── README.md
 ```
 
-O notebook principal está disponível em:
+Os arquivos brutos `.npy` fornecidos para o desenvolvimento da PoC **não são versionados no repositório**.
 
-`notebooks/01_PoC_Manutencao_Preditiva.ipynb`
+A pasta `app/` contém apenas os artefatos necessários para execução da demonstração.
 
 ---
 
-## 14. Tecnologias
+## 18. Tecnologias utilizadas
 
 - Python
 - NumPy
 - Pandas
 - SciPy
+- scikit-learn
 - Matplotlib
-- Scikit-learn
-- Google Colab
-- GitHub
+- Joblib
+- Streamlit
 
-Para a evolução da solução para produção, a arquitetura prevê tecnologias para disponibilização via API, visualização, persistência e monitoramento do modelo.
+A arquitetura proposta para produção prevê adicionalmente uma camada de API e componentes de integração, persistência, monitoramento e MLOps.
 
 ---
 
-## 15. Conclusão
+## 19. Reproduzindo a PoC
 
-A prova de conceito demonstrou a viabilidade da utilização de processamento de sinais e Machine Learning para classificação dos cinco estados presentes no conjunto de dados disponibilizado.
+Instale as dependências:
 
-A solução final alcançou **95,13% de Accuracy e Macro F1** no conjunto de teste estratificado e aproximadamente **94,92% de Accuracy média em validação cruzada de cinco folds**.
+```bash
+pip install -r requirements.txt
+```
 
-Além do desempenho do modelo, a PoC evidencia a importância de qualidade dos dados, seleção de sensores, engenharia de atributos, validação e arquitetura de implantação para a construção de uma solução de Inteligência Artificial industrial robusta.
+O pipeline completo de análise, treinamento e avaliação está disponível em:
+
+```text
+notebooks/01_PoC_Manutencao_Preditiva.ipynb
+```
+
+Os dados brutos não estão incluídos no repositório.
+
+Para executar apenas a demonstração, não é necessário reexecutar o treinamento:
+
+```bash
+cd app
+streamlit run dashboard.py
+```
+
+---
+
+## 20. Principais conclusões
+
+A PoC demonstrou que:
+
+1. **qualidade dos dados deve preceder a modelagem**, como evidenciado pela inconsistência estrutural dos Sensores 1, 2 e 3 e pela ausência de variabilidade do Sensor 4;
+
+2. **mais sensores não significam necessariamente melhor desempenho**, como demonstrado experimentalmente pelo Sensor 5;
+
+3. os **Sensores 1, 2 e 3 apresentam informações complementares**;
+
+4. a informação no **domínio da frequência é particularmente relevante** para a classificação dos estados operacionais;
+
+5. o refinamento da representação espectral elevou a Accuracy de **84,22% para 94,07%**, mantendo o HistGradientBoosting;
+
+6. a combinação da FFT detalhada com características temporais elevou o resultado final para **95,13% de Accuracy e 95,13% de Macro F1**;
+
+7. a validação cruzada apresentou resultado médio de **94,92%**, com baixa variação entre os folds;
+
+8. a implantação industrial requer, além do modelo, **engenharia de dados, integração, validação independente, monitoramento, observabilidade, segurança e governança**.
+
+---
+
+## Conclusão
+
+A solução apresentada demonstra uma abordagem de ponta a ponta para aplicação de Inteligência Artificial em um cenário de manutenção preditiva industrial.
+
+Mais do que alcançar uma métrica elevada de classificação, a PoC evidencia um processo de engenharia orientado por **qualidade dos dados, processamento de sinais, experimentação, avaliação quantitativa, seleção de informações, validação e planejamento da evolução para produção**.
+
+O resultado final de **95,13% de Accuracy e 95,13% de Macro F1**, aliado à estabilidade observada na validação cruzada, demonstra viabilidade técnica para continuidade do desenvolvimento.
+
+A evolução para uma solução industrial deverá ser condicionada à definição da semântica operacional das classes, validação com dados independentes e integração do pipeline de Inteligência Artificial ao ambiente de produção.
